@@ -12,7 +12,12 @@
           "package_name": "com.example.zipcode_community"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "777016848163-ll9ecl4lorvlu46hrafn4d81hfi5bugv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBIfVgKGbeThgDZLchRYCbBkgG7rt4GLaM"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "777016848163-ll9ecl4lorvlu46hrafn4d81hfi5bugv.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "777016848163-i7pemsjauidt12e30bl5lte64hvabbhm.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.zipcodeCommunity"
+              }
+            }
+          ]
         }
       }
     }
