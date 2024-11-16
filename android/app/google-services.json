@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "777016848163",
+    "project_id": "community-2d8f2",
+    "storage_bucket": "community-2d8f2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:777016848163:android:75c18de98f54f0136c2696",
+        "android_client_info": {
+          "package_name": "com.example.zipcode_community"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "777016848163-ll9ecl4lorvlu46hrafn4d81hfi5bugv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBIfVgKGbeThgDZLchRYCbBkgG7rt4GLaM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "777016848163-ll9ecl4lorvlu46hrafn4d81hfi5bugv.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "777016848163-i7pemsjauidt12e30bl5lte64hvabbhm.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.zipcodeCommunity"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
