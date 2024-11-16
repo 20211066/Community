@@ -13,8 +13,8 @@ class _MapScreenState extends State<MapScreen> {
   String? _currentAddress;
 
   // 네이버 API 키
-  final String _clientId = 'YOUR_NAVER_CLIENT_ID';
-  final String _clientSecret = 'YOUR_NAVER_CLIENT_SECRET';
+  final String _clientId = 'hpa2d8y0jw';
+  final String _clientSecret = '3XGEYWT5LMtrd7hXgyisWxARruUV9SCeTbq2C8fQ';
 
   @override
   void initState() {
@@ -38,8 +38,8 @@ class _MapScreenState extends State<MapScreen> {
         'https://naveropenapi.apigw.ntruss.com/map-reversegeocode/v2/gc?coords=${position.longitude},${position.latitude}&output=json');
 
     final response = await http.get(url, headers: {
-      'X-NCP-APIGW-API-KEY-ID': _clientId,
-      'X-NCP-APIGW-API-KEY': _clientSecret,
+      'X-NCP-APIGW-API-KEY-ID': 'hpa2d8y0jw',
+      'X-NCP-APIGW-API-KEY': '3XGEYWT5LMtrd7hXgyisWxARruUV9SCeTbq2C8fQ',
     });
 
     if (response.statusCode == 200) {
@@ -52,6 +52,8 @@ class _MapScreenState extends State<MapScreen> {
       print('Failed to load address');
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {

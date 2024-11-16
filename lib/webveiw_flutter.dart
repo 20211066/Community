@@ -1,51 +1,51 @@
-import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
-class NaverMapWebView extends StatefulWidget {
-  final double latitude;
-  final double longitude;
-
-  NaverMapWebView({required this.latitude, required this.longitude});
-
+class MapWithLocation extends StatefulWidget {
   @override
-  _NaverMapWebViewState createState() => _NaverMapWebViewState();
+  _MapWithLocationState createState() => _MapWithLocationState();
 }
 
-class _NaverMapWebViewState extends State<NaverMapWebView> {
-  late WebViewController _controller;
+class _MapWithLocationState extends State<MapWithLocation> {
+  late final WebViewController controller;
+  Position? _currentPosition;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageFinished: (_) => _fetchCurrentLocation(),
+        ),
+      )
+      ..loadFlutterAsset('assets/naver_map.html');
+  }
+
+  Future<void> _fetchCurrentLocation() async {
+    try {
+      Position position = await Geolocator.getCurrentPosition();
+      setState(() {
+        _currentPosition = position;
+      });
+
+      await controller.runJavaScript(
+          'initializeMap(${position.latitude}, ${position.longitude});');
+    } catch (e) {
+      print('Error fetching location: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('네이버 지도'),
+        title: Text("네이버 지도 - 현재 위치"),
       ),
-      body: WebView(
-        initialUrl: 'assets/naver_map.html',
-        javascriptMode: JavascriptMode.unrestricted,
-        onWebViewCreated: (WebViewController webViewController) {
-          _controller = webViewController;
-          _loadHtmlFromAssets();
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // 현재 위치 좌표를 JavaScript로 전달하여 마커 설정
-          _controller.runJavascript(
-              'setMarker(${widget.latitude}, ${widget.longitude});');
-        },
-        child: Icon(Icons.location_on),
-      ),
+      body: WebViewWidget(controller: controller),
     );
-  }
-
-  // 로컬 HTML 파일 로드
-  _loadHtmlFromAssets() async {
-    String fileText = await DefaultAssetBundle.of(context)
-        .loadString('assets/naver_map.html');
-    _controller.loadUrl(Uri.dataFromString(fileText,
-        mimeType: 'text/html', encoding: Encoding.getByName('utf-8'))
-        .toString());
   }
 }
