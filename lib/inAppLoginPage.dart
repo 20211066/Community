@@ -89,7 +89,7 @@ class _InAppLoginPageState extends State<InAppLoginPage> {
   // Naver 로그인
   Future<void> _loginWithNaver() async {
     final naverAuthService = NaverAuthService();
-    final user = await naverAuthService.signInWithNaver();
+    final user = await naverAuthService.signInWithNaver(context);
 
     if (user != null) {
       print("Naver 로그인 성공: ${user.email}");

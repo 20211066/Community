@@ -20,7 +20,7 @@
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="your_scheme" android:host="your_redirect_uri"/>
+                <data android:scheme="readingbuddynaverauthcallbackscheme"/>"
             </intent-filter>
             <meta-data
               android:resource="@style/NormalTheme"
