@@ -3,33 +3,30 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore import
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class NaverAuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance; // Firestore 인스턴스
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final storage = FlutterSecureStorage(); // Secure Storage 인스턴스
 
-  // Google Cloud Functions의 엔드포인트 URL
   final String cloudFunctionsUrl = "https://us-central1-community-2d8f2.cloudfunctions.net/getNaverAccessToken";
+
+
 
   // 네이버 로그인 메인 함수
   Future<User?> signInWithNaver(BuildContext context) async {
     try {
-      // Step 1: 네이버 로그인 페이지에서 Authorization Code 가져오기
       String authCode = await _getNaverAuthCode(context);
-
-      // Step 2: Authorization Code를 Cloud Functions로 전송하여 Access Token 요청
       final accessToken = await _fetchAccessTokenFromServer(authCode);
 
       if (accessToken != null) {
-        // Step 3: Naver User Profile 정보 가져오기
         final naverProfile = await _getNaverUserProfile(accessToken);
 
-        // Step 4: Firestore에 프로필 정보 저장
         await _saveUserProfileToFirestore(naverProfile);
 
-        // Step 5: Firebase 인증 처리
         final credential = OAuthProvider("naver.com").credential(accessToken: accessToken);
         UserCredential userCredential = await _auth.signInWithCredential(credential);
 
@@ -42,6 +39,7 @@ class NaverAuthService {
       return null;
     }
   }
+
 
   // 네이버 로그인 페이지에서 Authorization Code 가져오기
   Future<String> _getNaverAuthCode(BuildContext context) async {
@@ -67,6 +65,8 @@ class NaverAuthService {
     }
     return authCode;
   }
+
+  // state 값 일치 확인 함수
 
   // Google Cloud Functions에 인증 코드를 보내 Access Token 요청
   Future<String?> _fetchAccessTokenFromServer(String authCode) async {
@@ -108,7 +108,7 @@ class NaverAuthService {
         'profile_image_url': data['response']['profile_image'],
         'login_method': 'naver',
         'nickname': data['response']['nickname'],
-        'created_at': DateTime.now().toIso8601String(), // 현재 시간 추가
+        'created_at': DateTime.now().toIso8601String(),
       };
     } else {
       throw Exception("네이버 프로필 정보 요청 실패");
@@ -134,9 +134,77 @@ class NaverAuthService {
     }
   }
 
+  // Access Token 유효성 확인 및 갱신
+  Future<String?> getValidAccessToken() async {
+    final tokens = await getTokens();
+    final accessToken = tokens['access_token'];
+    final refreshToken = tokens['refresh_token'];
+    final expiration = tokens['token_expiration'];
+
+    if (accessToken == null || refreshToken == null || expiration == null) {
+      throw Exception("토큰 정보가 없습니다.");
+    }
+
+    final expirationTime = DateTime.parse(expiration);
+    if (DateTime.now().isBefore(expirationTime)) {
+      return accessToken; // 유효한 토큰 반환
+    } else {
+      // 토큰 갱신
+      return await refreshAccessToken(refreshToken);
+    }
+  }
+
+  // Refresh Token을 사용하여 Access Token 갱신
+  Future<String?> refreshAccessToken(String refreshToken) async {
+    final refreshUrl = 'https://nid.naver.com/oauth2.0/token';
+    final response = await http.post(
+      Uri.parse(refreshUrl),
+      body: {
+        'grant_type': 'refresh_token',
+        'client_id': 'YOUR_CLIENT_ID',
+        'client_secret': 'YOUR_CLIENT_SECRET',
+        'refresh_token': refreshToken,
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final newAccessToken = data['access_token'];
+      final expiresIn = int.parse(data['expires_in']);
+
+      // 새로운 토큰 저장
+      await saveTokens(newAccessToken, refreshToken, expiresIn);
+      return newAccessToken;
+    } else {
+      throw Exception("Access Token 갱신 실패: ${response.body}");
+    }
+  }
+
+  // Firestore에 저장된 토큰을 가져오기
+  Future<Map<String, String?>> getTokens() async {
+    final accessToken = await storage.read(key: 'access_token');
+    final refreshToken = await storage.read(key: 'refresh_token');
+    final expiration = await storage.read(key: 'token_expiration');
+    return {
+      'access_token': accessToken,
+      'refresh_token': refreshToken,
+      'token_expiration': expiration,
+    };
+  }
+
+  // 토큰을 Secure Storage에 저장
+  Future<void> saveTokens(String accessToken, String refreshToken, int expiresIn) async {
+    final expirationTime = DateTime.now().add(Duration(seconds: expiresIn)).toIso8601String();
+    await storage.write(key: 'access_token', value: accessToken);
+    await storage.write(key: 'refresh_token', value: refreshToken);
+    await storage.write(key: 'token_expiration', value: expirationTime);
+
+  }
+
   // 로그아웃 처리
   Future<void> signOutNaver() async {
     await _auth.signOut();
+    await storage.deleteAll(); // 모든 저장된 토큰 삭제
     debugPrint("네이버 로그아웃 완료");
   }
 
@@ -148,18 +216,26 @@ class NaverAuthService {
   }
 }
 
+
+
 // WebView를 사용해 네이버 로그인 페이지를 열고 인증 코드를 가져오는 화면
 class NaverLoginWebView extends StatelessWidget {
   final String loginUrl;
   final String redirectUri;
   final String state;
 
+
   const NaverLoginWebView({
     Key? key,
     required this.loginUrl,
     required this.redirectUri,
     required this.state,
+
   }) : super(key: key);
+
+  bool validateState(String returnedState, String expectedState) {
+    return returnedState == expectedState;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -172,10 +248,16 @@ class NaverLoginWebView extends StatelessWidget {
             onNavigationRequest: (NavigationRequest request) {
               if (request.url.startsWith(redirectUri)) {
                 Uri uri = Uri.parse(request.url);
-                if (uri.queryParameters['state'] == state) {
+                String? returnedState = uri.queryParameters['state'];
+
+                if (returnedState != null && returnedState == state) {
                   Navigator.pop(context, uri.queryParameters['code']);
                 } else {
-                  Navigator.pop(context, null);
+                  debugPrint("State 값이 일치하지 않습니다.");
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("로그인 오류: 상태 값 불일치")),
+                  );
+                  Navigator.pop(context, null); // state 불일치 시 실패 처리
                 }
                 return NavigationDecision.prevent;
               }

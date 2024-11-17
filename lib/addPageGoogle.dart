@@ -1,6 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'google_auth_service.dart';
-import 'complete_profile_page.dart';
+import 'package:zipcode_community/signInWithGoogle.dart';
+import 'authGoogle.dart';
 
 class GoogleSignInPage extends StatelessWidget {
   final GoogleAuthService authService = GoogleAuthService();
