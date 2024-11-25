@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'authService.dart';
 import 'addPageInApp.dart';
@@ -6,7 +5,6 @@ import 'addPageInApp.dart';
 class RegisterPage extends StatelessWidget {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _nickNameController = TextEditingController();
   final AuthService _authService = AuthService();
 
   @override
@@ -30,7 +28,6 @@ class RegisterPage extends StatelessWidget {
             ElevatedButton(
               onPressed: () async {
                 final User? user = await _authService.registerUser(
-                  _nickNameController.text,
                   _emailController.text,
                   _passwordController.text,
                 );

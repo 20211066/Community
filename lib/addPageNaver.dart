@@ -1,13 +1,9 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:zipcode_community/signInWithGoogle.dart';
-import 'authNaver.dart';
-
+import 'naver_auth_service.dart';
+import 'complete_profile_page.dart';
 
 class NaverSignInPage extends StatelessWidget {
   final NaverAuthService authService = NaverAuthService();
-
-  NaverSignInPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +12,7 @@ class NaverSignInPage extends StatelessWidget {
       body: Center(
         child: ElevatedButton(
           onPressed: () async {
-            User? user = await authService.signInWithNaver(context);
+            User? user = await authService.signInWithNaver();
             if (user != null) {
               print("로그인 성공: ${user.email}");
               Navigator.push(
