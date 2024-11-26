@@ -46,7 +46,7 @@ class NaverAuthService {
   // 네이버 로그인 페이지에서 Authorization Code 가져오기
   Future<String> _getNaverAuthCode(BuildContext context) async {
     String clientId = 'CM56KhCXqEBPz4Bxw9mm';
-    String redirectUri = 'https://us-central1-community-2d8f2.cloudfunctions.net/naverLoginCallback';
+    String redirectUri = 'https://naverlogincallback-777016848163.us-central1.run.app';
     String state = generateState();
 
     String url = 'https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=$clientId&state=$state&redirect_uri=$redirectUri';
