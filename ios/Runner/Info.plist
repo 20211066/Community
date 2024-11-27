@@ -5,11 +5,13 @@
     <key>CFBundleURLTypes</key>
         <array>
             <dict>
+                <key>CFBundleTypeRole</key>
+                <string>Editor</string>
+                <key>CFBundleURLName</key>
+                <string>Community</string>
                 <key>CFBundleURLSchemes</key>
                 <array>
-                    <string>777016848163-ll9ecl4lorvlu46hrafn4d81hfi5bugv</string>
                     <string>readingbuddynaverauthcallbackscheme</string>
-                     <!-- 여기에 OAuth 클라이언트 ID를 역순으로 입력 -->
                 </array>
             </dict>
         </array>

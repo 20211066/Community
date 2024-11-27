@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:zipcode_community/signInWithNaver.dart';
 import 'authService.dart';
 import 'authGoogle.dart'; // Google 로그인 서비스
 import 'authNaver.dart'; // Naver 로그인 서비스
 import 'registerPage.dart'; // 회원가입 페이지
 
 class InAppLoginPage extends StatefulWidget {
+  const InAppLoginPage({super.key});
+
   @override
   _InAppLoginPageState createState() => _InAppLoginPageState();
 }
-
 
 class _InAppLoginPageState extends State<InAppLoginPage> {
   final TextEditingController _emailController = TextEditingController();
@@ -76,34 +78,45 @@ class _InAppLoginPageState extends State<InAppLoginPage> {
   // Google 로그인
   Future<void> _loginWithGoogle() async {
     final googleAuthService = GoogleAuthService();
-    final user = await googleAuthService.signInWithGoogle();
-
-    if (user != null) {
-      print("Google 로그인 성공: ${user.email}");
-      Navigator.pushReplacementNamed(context, '/home');
-    } else {
-      print("Google 로그인 실패");
+    try {
+      final user = await googleAuthService.signInWithGoogle();
+      if (user != null) {
+        print("Google 로그인 성공: ${user.email}");
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        print("Google 로그인 실패");
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = "Google 로그인에 실패했습니다.";
+      });
+      print("Google 로그인 오류: $e");
     }
   }
 
   // Naver 로그인
   Future<void> _loginWithNaver() async {
-    final naverAuthService = NaverAuthService();
-    final user = await naverAuthService.signInWithNaver(context);
-
-    if (user != null) {
-      print("Naver 로그인 성공: ${user.email}");
-      Navigator.pushReplacementNamed(context, '/home');
-    } else {
-      print("Naver 로그인 실패");
+    try {
+      final user = await AuthNaver.signInWithNaver(context);
+      if (user != null) {
+        print("Naver 로그인 성공: ${user.email}");
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        print("Naver 로그인 실패");
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = "Naver 로그인에 실패했습니다.";
+      });
+      print("Naver 로그인 오류: $e");
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('InApp 로그인')),
-      body: Padding(
+      appBar: AppBar(title: const Text('InApp 로그인')),
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -111,21 +124,21 @@ class _InAppLoginPageState extends State<InAppLoginPage> {
             // 이메일 입력
             TextField(
               controller: _emailController,
-              decoration: InputDecoration(labelText: '이메일'),
+              decoration: const InputDecoration(labelText: '이메일'),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             // 비밀번호 입력
             TextField(
               controller: _passwordController,
-              decoration: InputDecoration(labelText: '비밀번호'),
+              decoration: const InputDecoration(labelText: '비밀번호'),
               obscureText: true,
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             // 로그인 버튼
             ElevatedButton(
               onPressed: _login,
-              child: Text('로그인'),
+              child: const Text('로그인'),
             ),
 
             // 오류 메시지
@@ -134,11 +147,11 @@ class _InAppLoginPageState extends State<InAppLoginPage> {
                 padding: const EdgeInsets.only(top: 8.0),
                 child: Text(
                   _errorMessage!,
-                  style: TextStyle(color: Colors.red),
+                  style: const TextStyle(color: Colors.red),
                 ),
               ),
 
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             // 회원가입 버튼
             TextButton(
@@ -148,30 +161,36 @@ class _InAppLoginPageState extends State<InAppLoginPage> {
                   MaterialPageRoute(builder: (context) => RegisterPage()),
                 );
               },
-              child: Text('회원가입'),
+              child: const Text('회원가입'),
             ),
 
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             // Google 간편 로그인 버튼
             ElevatedButton.icon(
               onPressed: _loginWithGoogle,
-              icon: Icon(Icons.g_mobiledata),
-              label: Text('Google 간편 로그인'),
+              icon: const Icon(Icons.g_mobiledata),
+              label: const Text('Google 간편 로그인'),
               style: ElevatedButton.styleFrom(
                 iconColor: Colors.blueAccent,
               ),
             ),
 
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
 
             // Naver 간편 로그인 버튼
-            ElevatedButton.icon(
-              onPressed: _loginWithNaver,
-              icon: Icon(Icons.web),
-              label: Text('Naver 간편 로그인'),
-              style: ElevatedButton.styleFrom(
-                iconColor: Colors.green,
+            InkWell(
+              onTap: _loginWithNaver,
+              child: Card(
+                margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
+                elevation: 2,
+                child: Ink.image(
+                  image: const AssetImage('images/naver.png'),
+                  fit: BoxFit.cover,
+                  height: 50,
+                  width: double.infinity,
+                ),
               ),
             ),
           ],
