@@ -17,6 +17,17 @@
         </array>
     <key>io.flutter.embedded_views_preview</key>
     <key>NSLocationWhenInUseUsageDescription</key>
+    <key>io.flutter.embedded_views_preview</key>
+    <true/>
+    <key>com.naver.maps.map.hpa2d8y0jw</key>
+    <string>3XGEYWT5LMtrd7hXgyisWxARruUV9SCeTbq2C8fQ</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>위치 사용 권한이 필요합니다.</string>
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>백그라운드에서 위치 사용 권한이 필요합니다.</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>앱 사용 시 및 백그라운드에서 위치 사용 권한이 필요합니다.</string>
+
     <key>NSAppTransportSecurity</key>
     <dict>
       <key>NSAllowsArbitraryLoads</key>

@@ -6,15 +6,18 @@ import 'package:flutter_naver_login/flutter_naver_login.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uni_links/uni_links.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:zipcode_community/main.dart'; // MyApp 정의 파일 임포트
+import 'nicknameService.dart'; // 닉네임 서비스 임포트
+import 'main.dart'; // MyApp 임포트
 
 class AuthNaver extends StatefulWidget {
   const AuthNaver({super.key});
 
+  /// 네이버 로그인 실행
   static Future<User?> signInWithNaver(BuildContext context) async {
     try {
       const String clientId = 'CM56KhCXqEBPz4Bxw9mm';
-      const String redirectUri = 'https://us-central1-community-2d8f2.cloudfunctions.net/naverLoginCallback';
+      const String redirectUri =
+          'https://us-central1-community-2d8f2.cloudfunctions.net/naverLoginCallback';
       String state = Uri.encodeComponent(
           base64Url.encode(List<int>.generate(16, (_) => Random().nextInt(255))));
 
@@ -27,7 +30,7 @@ class AuthNaver extends StatefulWidget {
 
       await launchUrl(url, mode: LaunchMode.externalApplication);
       print("Launching URL: $url");
-      return null; // Further authentication happens in the callback
+      return null; // 네이버 로그인 콜백 처리
     } catch (error) {
       print("Error during Naver login: $error");
       ScaffoldMessenger.of(context).showSnackBar(
@@ -47,7 +50,7 @@ class _AuthNaverState extends State<AuthNaver> {
   @override
   void initState() {
     super.initState();
-    initUniLinks();
+    initUniLinks(); // 딥링크 초기화
   }
 
   @override
@@ -56,18 +59,11 @@ class _AuthNaverState extends State<AuthNaver> {
     super.dispose();
   }
 
-  void navigateToMainPage() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => MyApp(),
-      ),
-    );
-  }
-
+  /// 딥링크 초기화
   Future<void> initUniLinks() async {
     try {
       final initialLink = await getInitialLink();
-      if (initialLink != null) _handleDeepLink(initialLink);
+      if (initialLink != null) await _handleDeepLink(initialLink);
 
       _linkSubscription = linkStream.listen(
             (String? link) {
@@ -82,6 +78,7 @@ class _AuthNaverState extends State<AuthNaver> {
     }
   }
 
+  /// 딥링크 처리
   Future<void> _handleDeepLink(String link) async {
     try {
       print("Processing deep link: $link");
@@ -105,13 +102,23 @@ class _AuthNaverState extends State<AuthNaver> {
     }
   }
 
+  /// 메인 페이지로 이동
+  void navigateToMainPage() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (context) => MyApp(),
+      ),
+    );
+  }
+
+  /// 네이버 로그아웃
   Future<void> naverLogout() async {
     try {
       await FlutterNaverLogin.logOut();
       print("Logout successful");
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (context) => AuthNaver(),
+          builder: (context) => const AuthNaver(),
         ),
       );
     } catch (error) {

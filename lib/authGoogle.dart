@@ -2,10 +2,24 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'nicknameService.dart';
+
 class GoogleAuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+
+  void createRandomNickname() async {
+    String userId = FirebaseAuth.instance.currentUser!.uid;
+
+    try {
+      String nickname = await NicknameService.registerWithHexNickname(userId);
+      print("User registered with nickname: $nickname");
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
 
   // Google 로그인 함수
   Future<User?> signInWithGoogle() async {
@@ -55,7 +69,7 @@ class GoogleAuthService {
         'email': user.email,
         'profileImageUrl': 'gs://community-2d8f2.firebasestorage.app/default_profile.png', //기본 이미지
         'loginMethod': 'google',
-        'nickName': null, // 사용자 입력 필요
+        'nickName': createRandomNickname, // 사용자 입력 필요
         'createdAt': FieldValue.serverTimestamp(), //생성 날짜
       });
       print("기본 사용자 정보 Firestore에 저장 완료.");

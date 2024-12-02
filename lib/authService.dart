@@ -1,9 +1,22 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'nicknameService.dart';
+
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  void createRandomNickname() async {
+    String userId = FirebaseAuth.instance.currentUser!.uid;
+
+    try {
+      String nickname = await NicknameService.registerWithHexNickname(userId);
+      print("User registered with nickname: $nickname");
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
 
   // 회원가입 및 Firestore에 기본 정보 저장
   Future<User?> registerUser(String nickName, String email,
@@ -22,7 +35,7 @@ class AuthService {
         'profileImageUrl': 'gs://community-2d8f2.firebasestorage.app/default_profile.png',
         'loginMethod': 'InApp',
         'createdAt': FieldValue.serverTimestamp(),
-        'nickName': null, // 사용자 입력 필요
+        'nickName': nickName, // 사용자 입력 필요
       });
 
       print('회원가입 및 기본 사용자 정보 저장 완료');
