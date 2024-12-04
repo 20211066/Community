@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'chatScreen.dart';
 
 class ChatListScreen extends StatefulWidget {
+  const ChatListScreen({super.key});
+
   @override
   _ChatListScreenState createState() => _ChatListScreenState();
 }
@@ -13,23 +15,34 @@ class _ChatListScreenState extends State<ChatListScreen> {
   final TextEditingController searchController = TextEditingController();
   List<QueryDocumentSnapshot>? searchResults;
 
-  get otherUserId_ => null;
-
+  // Firestore에서 nickname 검색
   Future<void> searchUser(String nickname) async {
-    final result = await FirebaseFirestore.instance
-        .collection("users")
-        .where("nickname", isEqualTo: nickname)
-        .get();
+    try {
+      final result = await FirebaseFirestore.instance
+          .collectionGroup('users') // 하위 컬렉션 전역 검색
+          .where('nickName', isEqualTo: nickname) // 정확한 필드 이름 사용
+          .get();
 
-    setState(() {
-      searchResults = result.docs;
-    });
+      if (result.docs.isEmpty) {
+        print("No users found");
+      } else {
+        print("Search results: ${result.docs.map((e) => e.data())}");
+      }
+
+      setState(() {
+        searchResults = result.docs;
+      });
+    } catch (e) {
+      print("Error searching user: $e");
+    }
   }
 
+
+  // 새로운 채팅방을 생성하거나 기존 채팅방 ID 가져오기
   Future<String> createOrGetChatRoom(String otherUserId) async {
     final chatId = currentUserId.compareTo(otherUserId) < 0
         ? "$currentUserId$otherUserId"
-        : "$otherUserId_$currentUserId";
+        : "$otherUserId$currentUserId";
 
     final chatDoc = FirebaseFirestore.instance.collection("chats").doc(chatId);
     final chatExists = (await chatDoc.get()).exists;
@@ -47,7 +60,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Chats"),
+        title: Text("Chat List"),
       ),
       body: Column(
         children: [
@@ -59,7 +72,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 Expanded(
                   child: TextField(
                     controller: searchController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: "Search by nickname",
                       border: OutlineInputBorder(),
                     ),
@@ -74,10 +87,10 @@ class _ChatListScreenState extends State<ChatListScreen> {
               ],
             ),
           ),
-          // 검색 결과 또는 채팅 리스트
+          // 검색 결과 또는 기존 채팅 목록
           Expanded(
             child: searchResults == null
-                ? buildChatList() // 기존 채팅 리스트
+                ? buildChatList() // 기존 채팅 목록
                 : buildSearchResults(), // 검색 결과
           ),
         ],
@@ -85,6 +98,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     );
   }
 
+  // 기존 채팅 목록 위젯
   Widget buildChatList() {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
@@ -93,56 +107,55 @@ class _ChatListScreenState extends State<ChatListScreen> {
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator()); // 로딩 상태
+          return Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError) {
-          return Center(child: Text("Error: ${snapshot.error}")); // 에러 처리
+          return Center(child: Text("Error: ${snapshot.error}"));
         }
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return Center(child: Text("No chats available")); // 데이터 없음 처리
+          return const Center(child: Text("No chats found"));
         }
 
-        var chats = snapshot.data!.docs;
+        final chats = snapshot.data!.docs;
         return ListView.builder(
           itemCount: chats.length,
           itemBuilder: (context, index) {
-            var chat = chats[index];
-            var otherUserId = (chat["participants"] as List)
+            final chat = chats[index];
+            final otherUserId = (chat["participants"] as List)
                 .firstWhere((uid) => uid != currentUserId);
 
             return FutureBuilder<DocumentSnapshot>(
-              future: FirebaseFirestore.instance.collection("users").doc(
-                  otherUserId).get(),
+              future: FirebaseFirestore.instance.collection("users").doc(otherUserId).get(),
               builder: (context, userSnapshot) {
                 if (userSnapshot.connectionState == ConnectionState.waiting) {
-                  return ListTile(
-                    title: Center(
-                        child: CircularProgressIndicator()), // 유저 로딩 상태
+                  return const ListTile(
+                    title: Center(child: CircularProgressIndicator()),
                   );
                 }
                 if (userSnapshot.hasError) {
-                  return ListTile(
+                  return const ListTile(
                     title: Text("Error loading user"),
-                  ); // 에러 처리
+                  );
                 }
                 if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
-                  return ListTile(
+                  return const ListTile(
                     title: Text("User not found"),
-                  ); // 데이터 없음 처리
+                  );
                 }
 
-                var user = userSnapshot.data!;
+                final user = userSnapshot.data!;
                 return ListTile(
-                  title: Text(user["nickname"]),
-                  onTap: () {
+                  title: Text(user["nickName"]),
+                  onTap: () async {
+                    final chatId = chat.id;
+
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            ChatScreen(
-                              chatId: chat.id,
-                              otherUser: user,
-                            ),
+                        builder: (context) => ChatScreen(
+                          chatId: chatId,
+                          otherUser: user,
+                        ),
                       ),
                     );
                   },
@@ -155,10 +168,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
     );
   }
 
+  // 검색 결과 위젯
   Widget buildSearchResults() {
     if (searchResults!.isEmpty) {
-      return Center(
-        child: Text("No users found"), // 검색 결과 없음
+      return const Center(
+        child: Text("No users found"),
       );
     }
     return ListView.builder(
@@ -166,20 +180,24 @@ class _ChatListScreenState extends State<ChatListScreen> {
       itemBuilder: (context, index) {
         final user = searchResults![index];
         final userId = user.id;
-        final nickname = user["nickname"];
+        final nickname = user["nickName"];
 
         return ListTile(
           title: Text(nickname),
           onTap: () async {
             final chatId = await createOrGetChatRoom(userId);
+            // Firestore에서 해당 유저의 DocumentSnapshot 가져오기
+            final userDoc = await FirebaseFirestore.instance
+                .collection("users")
+                .doc(userId)
+                .get();
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) =>
-                    ChatScreen(
-                      chatId: chatId,
-                      otherUser: user,
-                    ),
+                builder: (context) => ChatScreen(
+                  chatId: chatId,
+                  otherUser: userDoc,
+                ),
               ),
             );
           },
@@ -188,4 +206,3 @@ class _ChatListScreenState extends State<ChatListScreen> {
     );
   }
 }
-

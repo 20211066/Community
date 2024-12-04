@@ -4,19 +4,14 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <application
         android:label="zipcode_community"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
-            android:exported="true"
-            android:launchMode="singleTop"
-            android:taskAffinity=""
-            android:theme="@style/LaunchTheme"
-            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
-            android:hardwareAccelerated="true"
-            android:windowSoftInputMode="adjustResize">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
@@ -25,6 +20,17 @@
             </intent-filter>
             <meta-data android:name="com.google.android.gms.version"
                 android:value="@integer/google_play_services_version" />
+            <meta-data
+                android:name="com.naver.maps.map.location_tracking_mode"
+                android:value="location_button" />
+
+
+            <meta-data
+                android:name="com.google.firebase.messaging.default_notification_icon"
+                android:resource="@drawable/ic_notification" />
+            <meta-data
+                android:name="com.google.firebase.messaging.default_notification_color"
+                android:resource="@color/colorAccent" />
 
             <meta-data
               android:resource="@style/NormalTheme"

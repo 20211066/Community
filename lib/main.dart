@@ -45,7 +45,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => const AuthChecker(),
         '/home': (context) => HomePage(),
         '/login': (context) => const InAppLoginPage(),
-        '/naverMap': (context) => const NaverMap(), // 네이버 지도 경로 추가
+        '/naverMap': (context) => const NaverMapExample(), // 네이버 지도 경로 추가
       },
     );
   }

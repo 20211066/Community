@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'naverMap.dart';
 import 'chatListScreen.dart';
-import 'naverMapPage.dart';
 
 class HomePage extends StatelessWidget {
   @override
@@ -44,7 +44,7 @@ class HomePage extends StatelessWidget {
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => NaverMapPage()), // 네이버 맵 페이지로 이동
+                    MaterialPageRoute(builder: (context) => NaverMapExample()), // 네이버 맵 페이지로 이동
                   );
                 },
                 child: const Text("Go to Naver Map"),
