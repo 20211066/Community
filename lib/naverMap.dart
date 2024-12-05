@@ -17,6 +17,8 @@ class _NaverMapExampleState extends State<NaverMapExample> {
   late NaverMapController _mapController;
   Position? _currentPosition;
   StreamSubscription<Position>? _positionStream;
+  String markerInfo = '';
+  NLatLng? _tappedLocation; // 터치한 위치를 저장할 필드
 
   @override
   void initState() {
@@ -165,6 +167,11 @@ class _NaverMapExampleState extends State<NaverMapExample> {
                 _syncMarkersWithFirestore();
               },
               forceGesture: true,
+              onMapTapped:  (NPoint position, NLatLng latLng){
+                setState(() {
+                  _tappedLocation = latLng;// 터치한 위치 저장
+                });
+              },
             ),
             Positioned(
               bottom: 20,
@@ -196,65 +203,67 @@ class _NaverMapExampleState extends State<NaverMapExample> {
   }
 
 
-  void _addMarker() async {
-    if (_mapController != null && _currentPosition != null) {
-      try {
-        final marker = NMarker(
-          id: "marker_${DateTime.now().millisecondsSinceEpoch}",
-          position: NLatLng(
-            _currentPosition!.latitude,
-            _currentPosition!.longitude,
+  // 마킹 추가
+  Future<void> _addMarker() async {
+    if (_currentPosition == null) return;
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('마킹 정보 입력'),
+          content: TextField(
+            onChanged: (value) {
+                markerInfo = value;
+            },
+            decoration: const InputDecoration(hintText: '정보 입력'),
           ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                if (markerInfo.isNotEmpty) {
+                  final marker = NMarker(
+                    id: "marker_${DateTime.now().millisecondsSinceEpoch}",
+                    position: NLatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                  );
+                  _mapController.addOverlay(marker);
+                  FirebaseFirestore.instance.collection('markers').add({
+                    'latitude': _currentPosition!.latitude,
+                    'longitude': _currentPosition!.longitude,
+                    'info': markerInfo,
+                  });
+                }
+              },
+              child: const Text('저장'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Firestore에서 마킹 정보 로드
+  void _syncMarkersWithFirestore() {
+    FirebaseFirestore.instance.collection('markers').snapshots().listen((snapshot) {
+      _mapController.clearOverlays();
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final markerLat = data['latitude'] as double;
+        final markerLng = data['longitude'] as double;
+        // 'info'가 null일 수 있으므로 null 체크 후 기본값을 설정
+        final info = data['info'] as String? ?? '';  // null일 경우 빈 문자열로 설정
+
+        final marker = NMarker(
+          id: doc.id,
+          position: NLatLng(markerLat, markerLng),
         );
         _mapController.addOverlay(marker);
 
-        // Firestore에 저장
-        FirebaseFirestore.instance.collection('markers').add({
-          'latitude': _currentPosition!.latitude,
-          'longitude': _currentPosition!.longitude,
-        });
-      } catch (e) {
-        debugPrint("Error adding marker: $e");
-      }
-    }
-  }
-
-
-  void _syncMarkersWithFirestore() {
-    // Firestore 마커 데이터를 실시간으로 가져오기
-    FirebaseFirestore.instance.collection('markers').snapshots().listen((snapshot) {
-      // 기존 오버레이 초기화
-      _mapController.clearOverlays();
-
-      // 현재 위치가 없는 경우 필터링을 건너뜁니다.
-      if (_currentPosition == null) return;
-
-      for (var doc in snapshot.docs) {
-        final data = doc.data();
-
-        // Firestore 데이터에서 위도와 경도 가져오기
-        if (data.containsKey('latitude') && data.containsKey('longitude')) {
-          final markerLat = data['latitude'] as double;
-          final markerLng = data['longitude'] as double;
-
-          // 사용자 위치와 마커 사이 거리 계산
-          final distance = Geolocator.distanceBetween(
-            _currentPosition!.latitude,
-            _currentPosition!.longitude,
-            markerLat,
-            markerLng,
-          );
-
-          // 1km 이내의 마커만 지도에 표시
-          if (distance <= 1000) {
-            final marker = NMarker(
-              id: doc.id,
-              position: NLatLng(markerLat, markerLng),
-            );
-            _mapController.addOverlay(marker);
-          }
-        }
+        // 마커 클릭 시 이벤트 처리
+        final onMarkerInfoWinodw = NInfoWindow.onMap(id: doc.id , text: info, position: marker.position);
+        marker.openInfoWindow(onMarkerInfoWinodw);
       }
     });
   }
+
 }
