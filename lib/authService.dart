@@ -22,7 +22,7 @@ class AuthService {
         'profileImageUrl': 'gs://community-2d8f2.firebasestorage.app/default_profile.png',
         'loginMethod': 'InApp',
         'createdAt': FieldValue.serverTimestamp(),
-        'nickName': null, // 사용자 입력 필요
+        'nickName': nickName, // 사용자 입력 필요
       });
 
       print('회원가입 및 기본 사용자 정보 저장 완료');
