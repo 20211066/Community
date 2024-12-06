@@ -36,6 +36,7 @@ class AuthService {
         'loginMethod': 'InApp',
         'createdAt': FieldValue.serverTimestamp(),
         'nickName': nickName, // 사용자 입력 필요
+        'authority' : 'client', // 권한 기본값 설정
       });
 
       print('회원가입 및 기본 사용자 정보 저장 완료');

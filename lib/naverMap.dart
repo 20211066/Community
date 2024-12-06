@@ -4,6 +4,7 @@ import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 
 class NaverMapExample extends StatefulWidget {
@@ -18,7 +19,9 @@ class _NaverMapExampleState extends State<NaverMapExample> {
   Position? _currentPosition;
   StreamSubscription<Position>? _positionStream;
   String markerInfo = '';
-  NLatLng? _tappedLocation; // 터치한 위치를 저장할 필드
+  NCircleOverlay? _tempOverlay; // 터치한 위치의 임시 원형 오버레이
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   void initState() {
@@ -46,9 +49,7 @@ class _NaverMapExampleState extends State<NaverMapExample> {
     // 현재 위치 가져오기
     try {
       Position position = await Geolocator.getCurrentPosition();
-      setState(() {
-        _currentPosition = position;
-      });
+      setState(() => _currentPosition = position);
 
       // 실시간 위치 스트림 시작
       _startListeningToLocation();
@@ -59,41 +60,26 @@ class _NaverMapExampleState extends State<NaverMapExample> {
 
 
   Future<void> _requestLocationPermission() async {
-    final requeststatus = await Permission.locationWhenInUse.request();
-    var status = await Permission.location.status;
-    if (requeststatus.isGranted) {
-      debugPrint("Location permission granted.");
-    } else if (requeststatus.isDenied) {
-      debugPrint("Location permission denied.");
-    } else if (requeststatus.isPermanentlyDenied) {
-      debugPrint("Location permission permanently denied. Please enable it from settings.");
+    final status = await Permission.locationWhenInUse.request();
+    if (status.isPermanentlyDenied) {
       await openAppSettings();
     }
   }
 
   void _startListeningToLocation() {
-    const locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 100, // 최소 100m 이동 시 업데이트
-    );
-
+    const locationSettings = LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 100);
     _positionStream = Geolocator.getPositionStream(locationSettings: locationSettings).listen(
           (Position newPosition) {
-        // 100m 이상 이동 시 업데이트
-        if (_currentPosition != null) {
-          double distance = Geolocator.distanceBetween(
-            _currentPosition!.latitude,
-            _currentPosition!.longitude,
-            newPosition.latitude,
-            newPosition.longitude,
-          );
-
-          if (distance > 100) {
-            setState(() {
-              _currentPosition = newPosition;
-            });
-            _updateCameraPosition(newPosition);
-          }
+        if (_currentPosition == null ||
+            Geolocator.distanceBetween(
+              _currentPosition!.latitude,
+              _currentPosition!.longitude,
+              newPosition.latitude,
+              newPosition.longitude,
+            ) >
+                100) {
+          setState(() => _currentPosition = newPosition);
+          _updateCameraPosition(newPosition);
         }
       },
     );
@@ -104,7 +90,7 @@ class _NaverMapExampleState extends State<NaverMapExample> {
       final cameraUpdate = NCameraUpdate.fromCameraPosition(
         NCameraPosition(
           target: NLatLng(position.latitude, position.longitude),
-          zoom: 16,
+          zoom: 18,
         ),
       );
 
@@ -130,11 +116,10 @@ class _NaverMapExampleState extends State<NaverMapExample> {
                     _currentPosition!.latitude,
                     _currentPosition!.longitude,
                   ),
-                    zoom: 16,
+                    zoom: 18,
                     bearing: 0,
                     tilt: 0),
                 mapType: NMapType.navi,
-                nightModeEnable: true,
                 activeLayerGroups: const [ // 표시할 정보 레이어 선택하기
                   NLayerGroup.building,
                   NLayerGroup.traffic
@@ -147,11 +132,11 @@ class _NaverMapExampleState extends State<NaverMapExample> {
                 stopGesturesEnable: true,
                 //마찰 계수 0 일수록 부드러움
                 scrollGesturesFriction: 0.6,
-                zoomGesturesFriction: 0.6,
+                zoomGesturesFriction: 0.4,
                 rotationGesturesFriction: 0.6,
                 // 최대/최소 줌 제한
                 minZoom: 10, // default is 0
-                maxZoom: 16, // default is 21
+                maxZoom: 21, // default is 21
                 extent: const NLatLngBounds(
                     southWest: NLatLng(31.43, 122.37),
                     northEast: NLatLng(44.35, 132.0),
@@ -164,14 +149,14 @@ class _NaverMapExampleState extends State<NaverMapExample> {
             ),
               onMapReady: (controller) async {
                 _mapController = controller;
-                _syncMarkersWithFirestore();
+                _loadMarkers();
               },
               forceGesture: true,
-              onMapTapped:  (NPoint position, NLatLng latLng){
-                setState(() {
-                  _tappedLocation = latLng;// 터치한 위치 저장
-                });
+              onMapTapped: (point, latLng) {
+                _addTemporaryOverlay(latLng);
+                _showAddMarkerDialog(latLng);
               },
+
             ),
             Positioned(
               bottom: 20,
@@ -180,10 +165,16 @@ class _NaverMapExampleState extends State<NaverMapExample> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   FloatingActionButton(
-                    onPressed: _addMarker,
+                    onPressed:  () {
+                      if (_tempOverlay != null) {
+                        final position = _tempOverlay!.center;
+                        _showAddMarkerDialog(position);
+                      } else {
+                        _showSnackBar("마커를 추가할 위치를 먼저 선택하세요.");
+                      }
+                    },
                     child: const Icon(Icons.add_location),
                   ),
-                  const SizedBox(height: 10),
                 ],
               ),
             ),
@@ -202,39 +193,76 @@ class _NaverMapExampleState extends State<NaverMapExample> {
     }
   }
 
+  void _addTemporaryOverlay(NLatLng latLng) {
+    // 기존의 임시 오버레이를 제거
+    setState(() {
+      _tempOverlay = NCircleOverlay(
+        id: 'temp_overlay',
+        center: latLng,
+        radius: 15,
+        color: Colors.orange.withOpacity(0.5),
+        outlineColor: Colors.orange,
+        outlineWidth: 2,
+      );
+    });
 
-  // 마킹 추가
-  Future<void> _addMarker() async {
-    if (_currentPosition == null) return;
-    showDialog(
+    _mapController.addOverlay(_tempOverlay!);
+  }
+
+  void _createMarker(NLatLng location, String info) {
+    final marker = NMarker(
+      id: "marker_${DateTime.now().millisecondsSinceEpoch}",
+      position: location,
+    );
+
+    _mapController.addOverlay(marker);
+    marker.openInfoWindow(
+      NInfoWindow.onMap(id: marker.info.id, text: info, position: location),
+    );
+
+    FirebaseFirestore.instance.collection('markers').add({
+      'latitude': location.latitude,
+      'longitude': location.longitude,
+      'info': info,
+    });
+
+    // 임시 오버레이 제거
+    setState(() {
+      _tempOverlay = null;
+    });
+  }
+  // Firestore에서 마킹 정보 로드
+  Future<void> _showAddMarkerDialog(NLatLng location) async {
+    String title = '';
+    String details = '';
+
+    await showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('마킹 정보 입력'),
-          content: TextField(
-            onChanged: (value) {
-                markerInfo = value;
-            },
-            decoration: const InputDecoration(hintText: '정보 입력'),
+          title: const Text('마커 추가'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                decoration: const InputDecoration(labelText: '제목'),
+                onChanged: (value) => title = value,
+              ),
+              TextField(
+                decoration: const InputDecoration(labelText: '세부 정보'),
+                onChanged: (value) => details = value,
+              ),
+            ],
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
-                if (markerInfo.isNotEmpty) {
-                  final marker = NMarker(
-                    id: "marker_${DateTime.now().millisecondsSinceEpoch}",
-                    position: NLatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-                  );
-                  _mapController.addOverlay(marker);
-                  FirebaseFirestore.instance.collection('markers').add({
-                    'latitude': _currentPosition!.latitude,
-                    'longitude': _currentPosition!.longitude,
-                    'info': markerInfo,
-                  });
+                Navigator.pop(context);
+                if (title.isNotEmpty) {
+                  _saveMarker(location, title, details);
                 }
               },
-              child: const Text('저장'),
+              child: const Text('추가'),
             ),
           ],
         );
@@ -242,28 +270,68 @@ class _NaverMapExampleState extends State<NaverMapExample> {
     );
   }
 
-  // Firestore에서 마킹 정보 로드
-  void _syncMarkersWithFirestore() {
-    FirebaseFirestore.instance.collection('markers').snapshots().listen((snapshot) {
-      _mapController.clearOverlays();
+  Future<void> _saveMarker(NLatLng location, String title, String details) async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) return;
+
+    final markerData = {
+      'title': title,
+      'details': details,
+      'latitude': location.latitude,
+      'longitude': location.longitude,
+      'userId': currentUser.uid,
+      'isPublic': false,
+    };
+
+    await _firestore.collection('markers').add(markerData);
+  }
+  void _loadMarkers() {
+    _firestore.collection('markers').snapshots().listen((snapshot) {
+      _mapController.clearOverlays(); // 기존 마커 제거
       for (var doc in snapshot.docs) {
         final data = doc.data();
         final markerLat = data['latitude'] as double;
         final markerLng = data['longitude'] as double;
-        // 'info'가 null일 수 있으므로 null 체크 후 기본값을 설정
-        final info = data['info'] as String? ?? '';  // null일 경우 빈 문자열로 설정
+        final title = data['title'] as String? ?? '제목 없음';
+        final details = data['details'] as String? ?? '';
+        final userId = data['userId'] as String?;
+        final isPublic = data['isPublic'] as bool? ?? false;
 
-        final marker = NMarker(
-          id: doc.id,
-          position: NLatLng(markerLat, markerLng),
-        );
-        _mapController.addOverlay(marker);
 
-        // 마커 클릭 시 이벤트 처리
-        final onMarkerInfoWinodw = NInfoWindow.onMap(id: doc.id , text: info, position: marker.position);
-        marker.openInfoWindow(onMarkerInfoWinodw);
+        if (_auth.currentUser?.uid == userId || isPublic == true) {
+          final marker = NMarker(
+            position: NLatLng(markerLat, markerLng),
+            id: doc.id,
+            caption: NOverlayCaption(text: title),
+          );
+          marker.setOnTapListener((marker) {
+            _showMarkerInfoDialog(title, details);
+          });
+          _mapController.addOverlay(marker);
+          print('Adding Marker at: $markerLat, $markerLng');
+        }
       }
     });
+  }
+
+
+  void _showMarkerInfoDialog(String title, String details) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(details),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('닫기')),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
 }

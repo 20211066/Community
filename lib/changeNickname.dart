@@ -3,7 +3,7 @@ import 'nicknameService.dart';
 
 class UpdateNicknameScreen extends StatelessWidget {
   final String userId; // 현재 로그인한 유저의 ID
-  UpdateNicknameScreen({required this.userId});
+  const UpdateNicknameScreen({super.key, required this.userId});
 
   void changeNickname(BuildContext context) async {
     final TextEditingController nicknameController = TextEditingController();
