@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:zipcode_community/signInWithNaver.dart';
 import 'authService.dart';
@@ -17,6 +18,15 @@ class _InAppLoginPageState extends State<InAppLoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   final AuthService _authService = AuthService();
 
+
+  // 이메일 형식 검증 함수
+  bool _isValidEmail(String email) {
+    final emailRegex = RegExp(
+        r'^[a-zA-Z0-9]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    );
+    return emailRegex.hasMatch(email);
+  }
+
   String? _errorMessage;
 
   // 로그인 함수
@@ -26,54 +36,68 @@ class _InAppLoginPageState extends State<InAppLoginPage> {
     });
 
     try {
+      final email = _emailController.text.trim();
+      final password = _passwordController.text.trim();
       final user = await _authService.loginWithEmailAndPassword(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
+         email, password,
       );
 
+      // Firestore에서 사용자 확인
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users') // 사용자가 저장된 Firestore 컬렉션
+          .doc(email) // 이메일을 문서 ID로 사용한다고 가정
+          .get();
+
+      if (!userDoc.exists) {
+        // 사용자가 Firestore에 없으면 로그인 실패 처리
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("로그인 실패: 이메일이 존재하지 않습니다.")),
+        );
+        return;
+      }
+
+      // Firestore에 저장된 비밀번호 확인
+      final storedPassword = userDoc.data()?['password'];
+      if (storedPassword != password) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("로그인 실패: 비밀번호가 일치하지 않습니다.")),
+        );
+        return;
+      }
+
+      if (email.isEmpty || password.isEmpty) {
+        // 필수 입력값이 비어 있으면 알림 표시
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("모든 필드를 입력해주세요.")));
+        return;
+      }
+
+      if (!_isValidEmail(email)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("제대로 된 이메일 형식이 아닙니다.")),
+        );
+        return;
+      }
+
+      if(password.length < 6){
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("비밀번호를 6자리 이상 입력하시오.")
+            ));
+      }
+
       if (user != null) {
-        print('로그인 성공: ${user.email}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("로그인 성공!")),
+        );
         Navigator.pushReplacementNamed(context, '/home'); // 홈 화면으로 이동
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = "없는 이메일 정보입니다.";
-      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("로그인 실패했습니다")),
+      );
       print("로그인 실패: $e");
     }
   }
 
-  Future<void> _register() async {
-    setState(() {
-      _errorMessage = null;
-    });
-
-    // 비밀번호 길이 체크
-    if (_passwordController.text.trim().length < 6) {
-      setState(() {
-        _errorMessage = "비밀번호를 6자리 이상으로 입력하세요.";
-      });
-      return;
-    }
-
-    try {
-      // 이메일과 비밀번호로 회원가입 처리
-      final user = await _authService.registerWithEmailAndPassword(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-      );
-
-      if (user != null) {
-        print('회원가입 성공: ${user.email}');
-        Navigator.pushReplacementNamed(context, '/home'); // 홈 화면으로 이동
-      }
-    } catch (e) {
-      setState(() {
-        _errorMessage = "회원가입에 실패했습니다. 다시 시도해주세요.";
-      });
-      print("회원가입 실패: $e");
-    }
-  }
 
   // Google 로그인
   Future<void> _loginWithGoogle() async {
