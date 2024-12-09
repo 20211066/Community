@@ -22,6 +22,8 @@ class _NaverMapExampleState extends State<NaverMapExample> {
   NCircleOverlay? _tempOverlay; // 터치한 위치의 임시 원형 오버레이
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final List<NMarker> _markers = [];
+  bool isPublic = false;
 
   @override
   void initState() {
@@ -209,28 +211,6 @@ class _NaverMapExampleState extends State<NaverMapExample> {
     _mapController.addOverlay(_tempOverlay!);
   }
 
-  void _createMarker(NLatLng location, String info) {
-    final marker = NMarker(
-      id: "marker_${DateTime.now().millisecondsSinceEpoch}",
-      position: location,
-    );
-
-    _mapController.addOverlay(marker);
-    marker.openInfoWindow(
-      NInfoWindow.onMap(id: marker.info.id, text: info, position: location),
-    );
-
-    FirebaseFirestore.instance.collection('markers').add({
-      'latitude': location.latitude,
-      'longitude': location.longitude,
-      'info': info,
-    });
-
-    // 임시 오버레이 제거
-    setState(() {
-      _tempOverlay = null;
-    });
-  }
   // Firestore에서 마킹 정보 로드
   Future<void> _showAddMarkerDialog(NLatLng location) async {
     String title = '';
@@ -252,6 +232,18 @@ class _NaverMapExampleState extends State<NaverMapExample> {
                 decoration: const InputDecoration(labelText: '세부 정보'),
                 onChanged: (value) => details = value,
               ),
+              Row(
+                children: [
+                  Checkbox(
+                      value: isPublic,
+                      onChanged: (value){
+                        setState(() {
+                          isPublic = value ?? false;
+                        });
+                      }),
+                  const Text("공개 마커"),
+                ],
+              )
             ],
           ),
           actions: [
@@ -259,7 +251,7 @@ class _NaverMapExampleState extends State<NaverMapExample> {
               onPressed: () {
                 Navigator.pop(context);
                 if (title.isNotEmpty) {
-                  _saveMarker(location, title, details);
+                  _saveMarker(location, title, details, isPublic);
                 }
               },
               child: const Text('추가'),
@@ -270,7 +262,7 @@ class _NaverMapExampleState extends State<NaverMapExample> {
     );
   }
 
-  Future<void> _saveMarker(NLatLng location, String title, String details) async {
+  Future<void> _saveMarker(NLatLng location, String title, String details, bool isPublic) async {
     final currentUser = _auth.currentUser;
     if (currentUser == null) return;
 
@@ -280,14 +272,20 @@ class _NaverMapExampleState extends State<NaverMapExample> {
       'latitude': location.latitude,
       'longitude': location.longitude,
       'userId': currentUser.uid,
-      'isPublic': false,
+      'isPublic': isPublic,
+      'adminUid': currentUser.uid, // 마커를 만든 관리자의 uid 저장
     };
 
     await _firestore.collection('markers').add(markerData);
+    _loadMarkers();
   }
+
+
   void _loadMarkers() {
     _firestore.collection('markers').snapshots().listen((snapshot) {
-      _mapController.clearOverlays(); // 기존 마커 제거
+      setState(() {
+        _markers.clear(); // 기존 마커 리스트 초기화
+      });
       for (var doc in snapshot.docs) {
         final data = doc.data();
         final markerLat = data['latitude'] as double;
@@ -295,27 +293,43 @@ class _NaverMapExampleState extends State<NaverMapExample> {
         final title = data['title'] as String? ?? '제목 없음';
         final details = data['details'] as String? ?? '';
         final userId = data['userId'] as String?;
+        final adminUid = data['adminUid'] as String?;
         final isPublic = data['isPublic'] as bool? ?? false;
 
 
-        if (_auth.currentUser?.uid == userId || isPublic == true) {
+        // Firestore에서 isPublic에 따라 표시 여부 결정
+        if (_auth.currentUser?.uid == userId || isPublic) {
           final marker = NMarker(
             position: NLatLng(markerLat, markerLng),
             id: doc.id,
             caption: NOverlayCaption(text: title),
           );
-          marker.setOnTapListener((marker) {
-            _showMarkerInfoDialog(title, details);
+
+          marker.setOnTapListener((tappedMarker) {
+            _showMarkerInfoDialog(
+              title,
+              details,
+              tappedMarker,
+              data['adminUid'],
+            );
           });
+
           _mapController.addOverlay(marker);
           print('Adding Marker at: $markerLat, $markerLng');
+          _markers.add(marker);
         }
       }
     });
   }
 
 
-  void _showMarkerInfoDialog(String title, String details) {
+  void _showMarkerInfoDialog(
+      String title, String details, NMarker tappedMarker, String? adminUid) {
+    final currentUserUid = _auth.currentUser?.uid;
+
+// 개인 사용자가 만든 마커인지 확인
+// 관리자가 만든 마커인지 확인
+
     showDialog(
       context: context,
       builder: (context) {
@@ -323,11 +337,39 @@ class _NaverMapExampleState extends State<NaverMapExample> {
           title: Text(title),
           content: Text(details),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('닫기')),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('닫기'),
+            ),
+            if (_auth.currentUser?.uid == adminUid)
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await _deleteMarker(tappedMarker);
+                },
+                child: const Text('삭제', style: TextStyle(color: Colors.red)),
+              ),
           ],
         );
       },
     );
+  }
+
+
+  Future<void> _deleteMarker(NMarker marker) async {
+    try {
+      // Firestore에서 마커 삭제
+      await _firestore.collection('markers').doc(marker.info.id).delete();
+
+      // 지도에서 마커 제거
+      _mapController.clearOverlays();
+      _loadMarkers(); // 마커 다시 로드
+
+      _showSnackBar("마커가 삭제되었습니다.");
+    } catch (e) {
+      debugPrint("Failed to delete marker: $e");
+      _showSnackBar("마커 삭제에 실패했습니다.");
+    }
   }
 
   void _showSnackBar(String message) {
