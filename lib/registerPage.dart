@@ -15,13 +15,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
   String? _errorMessage;
 
-  // 이메일 형식 검증 함수
-  bool _isValidEmail(String email) {
-    final emailRegex = RegExp(
-        r'^[a-zA-Z0-9]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
-    return emailRegex.hasMatch(email);
-  }
-
   // 회원가입 함수
   Future<void> _register() async {
     setState(() {
@@ -39,18 +32,6 @@ class _RegisterPageState extends State<RegisterPage> {
         return;
       }
 
-      if (!_isValidEmail(email)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("제대로 된 이메일 형식이 아닙니다.")),
-        );
-        return;
-      }
-
-      if(password.length < 6){
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("비밀번호를 6자리 이상 입력하시오.")
-            ));
-      }
       // 회원가입 처리 (AuthService의 registerUser 호출)
       User? user = await _authService.registerUser(nickName, email, password);
 
@@ -60,16 +41,19 @@ class _RegisterPageState extends State<RegisterPage> {
       }
     } catch (e) {
       setState(() {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("회원가입 실패.")));
+        _errorMessage = "회원가입 실패: ${e.toString()}";
       });
+      print("회원가입 실패: $e");
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('회원가입')),
+      appBar: AppBar(backgroundColor: Color(0xFFFFF9EF),),
+      backgroundColor: Color(0xFFFFF9EF),
       body: Padding(
+
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
