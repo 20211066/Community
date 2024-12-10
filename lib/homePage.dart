@@ -7,11 +7,14 @@ import 'my_profile_screen.dart';
 import 'notification_screen.dart';
 
 class HomePage extends StatefulWidget {
+  late final int initialIndex;
+
   @override
   _HomePageState createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
+
   int _selectedIndex = -1; // 초기값을 -1로 설정 (하단 툴바도 숨기기)
   bool _showBottomNavBar = false; // 하단 툴바 표시 여부
 
@@ -21,7 +24,7 @@ class _HomePageState extends State<HomePage> {
     ChatListScreen(),
     NaverMapExample(),
     NotificationsScreen(),
-    ProfileScreen(),
+    MyProfileScreen(),
   ];
 
   void _onItemTapped(int index) {

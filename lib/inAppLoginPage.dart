@@ -40,6 +40,38 @@ class _InAppLoginPageState extends State<InAppLoginPage> {
     }
   }
 
+  Future<void> _register() async {
+    setState(() {
+      _errorMessage = null;
+    });
+
+    // 비밀번호 길이 체크
+    if (_passwordController.text.trim().length < 6) {
+      setState(() {
+        _errorMessage = "비밀번호를 6자리 이상으로 입력하세요.";
+      });
+      return;
+    }
+
+    try {
+      // 이메일과 비밀번호로 회원가입 처리
+      final user = await _authService.registerWithEmailAndPassword(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
+
+      if (user != null) {
+        print('회원가입 성공: ${user.email}');
+        Navigator.pushReplacementNamed(context, '/home'); // 홈 화면으로 이동
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = "회원가입에 실패했습니다. 다시 시도해주세요.";
+      });
+      print("회원가입 실패: $e");
+    }
+  }
+
   /*// Google 로그인
   Future<void> _loginWithGoogle() async {
     final googleAuthService = GoogleAuthService();
@@ -144,6 +176,9 @@ class _InAppLoginPageState extends State<InAppLoginPage> {
                   ),
                 ),
               ),
+
+
+
               SizedBox(height: 20),
               // 회원가입 버튼
               TextButton(

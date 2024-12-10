@@ -1,7 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'post_screen.dart';
 import 'common_layout.dart';  // CommonLayout import 추가
+import 'post_edit.dart';
 
 class BoardListScreen extends StatefulWidget {
   final String category;
@@ -13,9 +15,20 @@ class BoardListScreen extends StatefulWidget {
 }
 
 class _BoardListScreenState extends State<BoardListScreen> {
+  final String currentUserId = FirebaseAuth.instance.currentUser!.uid;
+
+  Future<void> _deletePost(String postId) async {
+    try {
+      await FirebaseFirestore.instance.collection('posts').doc(postId).delete();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('게시글이 삭제되었습니다.')));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('게시글 삭제에 실패했습니다.')));
+    }
+  }
+
   // 조회수 증가 함수
-  void _incrementViews(DocumentSnapshot post) {
-    FirebaseFirestore.instance.collection('posts').doc(post.id).update({
+  Future<void> _incrementViews(String postId) async {
+    await FirebaseFirestore.instance.collection('posts').doc(postId).update({
       'views': FieldValue.increment(1),
     });
   }
@@ -25,7 +38,7 @@ class _BoardListScreenState extends State<BoardListScreen> {
     return CommonLayout(
       title: '${widget.category}',
       child: StreamBuilder<QuerySnapshot>(
-        stream: widget.category == '자유게시판'
+        stream: widget.category == '자유 광장'
             ? FirebaseFirestore.instance.collection('posts').orderBy('createdAt', descending: true).snapshots() // 모든 게시글 가져오기
             : FirebaseFirestore.instance
             .collection('posts')
@@ -52,15 +65,15 @@ class _BoardListScreenState extends State<BoardListScreen> {
             itemBuilder: (context, index) {
               final post = posts[index];
               final postData = post.data() as Map<String, dynamic>;
-
+              final isAuthor = postData['authorId'] == currentUserId;
               // createdAt 필드가 Firestore 타임스탬프인지 확인하고 형식 변환
               DateTime createdAt = (postData['createdAt'] as Timestamp).toDate();
               String formattedTime = _formatTimestamp(createdAt);
 
               return GestureDetector(
-                onTap: () {
+                onTap: () async {
                   // 게시글 클릭 시 조회 수 증가
-                  _incrementViews(post);
+                  await _incrementViews(post.id);
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => PostScreen(postId: post.id), // postId를 전달
@@ -76,7 +89,7 @@ class _BoardListScreenState extends State<BoardListScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // 자유게시판에서만 카테고리 표시
-                        if (widget.category == '자유게시판')
+                        if (widget.category == '자유 광장')
                           Text(
                             postData['category'] ?? '카테고리 없음',
                             style: TextStyle(
@@ -135,6 +148,41 @@ class _BoardListScreenState extends State<BoardListScreen> {
                             ),
                           ],
                         ),
+                        if (isAuthor) // 작성자일 경우에만 표시
+                          PopupMenuButton<String>(
+                            onSelected: (value) async {
+                              if (value == 'edit') {
+                                // 수정 화면으로 이동
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => PostEditScreen(
+                                      postId: post.id,
+                                      initialTitle: postData['title'] ?? '제목 없음',
+                                      initialContent: postData['content'] ?? '내용 없음',
+                                    ),
+                                  ),
+                                );
+                              } else if (value == 'delete') {
+                                // 삭제 기능
+                                await _deletePost(post.id);
+                              }
+                            },
+                            itemBuilder: (BuildContext context) {
+                              return [
+                                PopupMenuItem(
+                                  value: 'edit',
+                                  child: Text('수정'),
+                                ),
+                                PopupMenuItem(
+                                  value: 'delete',
+                                  child: Text('삭제'),
+                                ),
+                              ];
+                            },
+                            icon: Icon(Icons.more_vert),
+                          ),
+
+
                       ],
                     ),
                   ),

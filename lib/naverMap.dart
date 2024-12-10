@@ -114,10 +114,10 @@ class _NaverMapExampleState extends State<NaverMapExample> {
             NaverMap(
               options: NaverMapViewOptions(
                 initialCameraPosition: NCameraPosition(
-                  target: NLatLng(
-                    _currentPosition!.latitude,
-                    _currentPosition!.longitude,
-                  ),
+                    target: NLatLng(
+                      _currentPosition!.latitude,
+                      _currentPosition!.longitude,
+                    ),
                     zoom: 18,
                     bearing: 0,
                     tilt: 0),
@@ -140,15 +140,15 @@ class _NaverMapExampleState extends State<NaverMapExample> {
                 minZoom: 10, // default is 0
                 maxZoom: 21, // default is 21
                 extent: const NLatLngBounds(
-                    southWest: NLatLng(31.43, 122.37),
-                    northEast: NLatLng(44.35, 132.0),
-              ),
+                  southWest: NLatLng(31.43, 122.37),
+                  northEast: NLatLng(44.35, 132.0),
+                ),
                 locale: const Locale('kr'),
                 indoorEnable: true,
                 scaleBarEnable: true,
                 logoClickEnable: false,
                 locationButtonEnable: true,
-            ),
+              ),
               onMapReady: (controller) async {
                 _mapController = controller;
                 _loadMarkers();
