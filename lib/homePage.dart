@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'board_screen.dart';
 import 'naverMap.dart';
 import 'chatListScreen.dart';
 import 'my_profile_screen.dart';
+import 'notification_screen.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -13,7 +13,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = -1; // 초기값을 -1로 설정 (하단 툴바도 숨기기)
-  bool _showAppBar = false; // 툴바 표시 여부
   bool _showBottomNavBar = false; // 하단 툴바 표시 여부
 
   // 각 탭에 매핑되는 화면 위젯
@@ -21,24 +20,18 @@ class _HomePageState extends State<HomePage> {
     BoardScreen(), // 놀이터
     ChatListScreen(),
     NaverMapExample(),
-    Center(child: Text('알림 화면', style: TextStyle(fontSize: 24))),
-    MyProfileScreen(),
+    NotificationsScreen(),
+    ProfileScreen(),
   ];
 
   void _onItemTapped(int index) {
     setState(() {
-      // 놀이터 탭을 클릭했을 때만 BoardScreen을 보이도록 설정
-      if (index == 0 && _selectedIndex == -1) {
-        _selectedIndex = 0;
-      } else {
-        _selectedIndex = index;
-      }
+      _selectedIndex = index;
     });
   }
 
   void _showBottomNavBarFunction() {
     setState(() {
-      _showAppBar = true; // 툴바 표시
       _showBottomNavBar = true; // 하단 툴바 표시
     });
   }
@@ -46,24 +39,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _showAppBar
-          ? AppBar(
-        title: Text(
-          ['놀이터', '톡톡', '지도', '알림', 'MY'][_selectedIndex],
-        ),
-        actions: _selectedIndex == 4
-            ? [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              Navigator.of(context).pushReplacementNamed('/login');
-            },
-          ),
-        ]
-            : null,
-      )
-          : null, // 툴바 숨기기
+      backgroundColor: Color(0xFFFFF9EF),
       body: _selectedIndex == -1
           ? Center(
         child: SingleChildScrollView(
@@ -73,7 +49,10 @@ class _HomePageState extends State<HomePage> {
             children: <Widget>[
               const Text(
                 '로그인에 성공했습니다!',
-                style: TextStyle(fontSize: 24),
+                style: TextStyle(
+                  fontSize: 24,
+                  color: Colors.black, // 검정색 글자
+                ),
               ),
               const SizedBox(height: 20),
               ElevatedButton(
@@ -83,7 +62,24 @@ class _HomePageState extends State<HomePage> {
                     _selectedIndex = 1; // 화면을 ChatListScreen으로 변경
                   });
                 },
-                child: const Text("Go to Chat List"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFFFFDCA2),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 15,
+                    horizontal: 20,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  "Go to Chat List",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black, // 검정색 글자
+                  ),
+                ),
               ),
               const SizedBox(height: 20),
               ElevatedButton(
@@ -93,7 +89,24 @@ class _HomePageState extends State<HomePage> {
                     _selectedIndex = 2; // 화면을 NaverMap으로 변경
                   });
                 },
-                child: const Text("Go to Naver Map"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFFFFDCA2),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 15,
+                    horizontal: 20,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  "Go to Naver Map",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black, // 검정색 글자
+                  ),
+                ),
               ),
             ],
           ),
@@ -107,32 +120,32 @@ class _HomePageState extends State<HomePage> {
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home, color: Colors.grey),
-            activeIcon: Icon(Icons.home, color: Colors.blue),
+            activeIcon: Icon(Icons.home, color: Color(0xFFFFDCA2)),
             label: '놀이터',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.chat, color: Colors.grey),
-            activeIcon: Icon(Icons.chat, color: Colors.blue),
+            activeIcon: Icon(Icons.chat, color: Color(0xFFFFDCA2)),
             label: '톡톡',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.map, color: Colors.grey),
-            activeIcon: Icon(Icons.map, color: Colors.blue),
+            activeIcon: Icon(Icons.map, color: Color(0xFFFFDCA2)),
             label: '지도',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.notifications, color: Colors.grey),
-            activeIcon: Icon(Icons.notifications, color: Colors.blue),
+            activeIcon: Icon(Icons.notifications, color: Color(0xFFFFDCA2)),
             label: '알림',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person, color: Colors.grey),
-            activeIcon: Icon(Icons.person, color: Colors.blue),
+            activeIcon: Icon(Icons.person, color: Color(0xFFFFDCA2)),
             label: 'MY',
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blue,
+        selectedItemColor: Color(0xFFFFDCA2),
         unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
       )
