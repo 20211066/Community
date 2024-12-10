@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/services.dart';
+import 'common_layout.dart';
 
 class ChatScreen extends StatefulWidget {
   final String chatId; // 채팅방 ID
@@ -23,11 +23,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.otherUser["nickName"]),
-      ),
-      body: Column(
+    return CommonLayout(
+      title: widget.otherUser["nickName"],
+      child: Column(
         children: [
           // 채팅 메시지 리스트
           Expanded(
@@ -70,15 +68,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: TextField(
                     controller: messageController,
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9a-zA-Zㄱ-ㅎ가-힣]')),
-                    ],
                     decoration: InputDecoration(
                       hintText: "메시지를 입력하세요",
                       border: OutlineInputBorder(),
                     ),
-                    keyboardType: TextInputType.text, // 텍스트 입력 유형 설정
-                    textInputAction: TextInputAction.done, // 엔터 키 액션
                   ),
                 ),
                 IconButton(
@@ -101,12 +94,12 @@ class _ChatScreenState extends State<ChatScreen> {
         margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
         decoration: BoxDecoration(
-          color: isMe ? Colors.blue : Colors.grey[300],
+          color: isMe ? Color(0xFFFFDCA2) : Color(0xFFFFF9EF),
           borderRadius: BorderRadius.circular(12.0),
         ),
         child: Text(
           text,
-          style: TextStyle(color: isMe ? Colors.white : Colors.black),
+          style: TextStyle(color: Colors.black),
         ),
       ),
     );
