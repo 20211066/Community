@@ -1,7 +1,18 @@
+buildscript {
+    repositories {
+        google() // Google의 Maven 리포지토리
+        mavenCentral() // Maven Central 리포지토리
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.0.4' // Android Gradle Plugin
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.0" // Kotlin Gradle Plugin
+    }
+}
+
 allprojects {
     repositories {
-        google()
-        mavenCentral()
+        google() // Google의 Maven 리포지토리
+        mavenCentral() // Maven Central 리포지토리
     }
 }
 

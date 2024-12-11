@@ -1,35 +1,44 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.your_project_name">
+    package="com.example.zipcode_community">
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <application
         android:label="zipcode_community"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
-            android:exported="true"
-            android:launchMode="singleTop"
-            android:taskAffinity=""
-            android:theme="@style/LaunchTheme"
-            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
-            android:hardwareAccelerated="true"
-            android:windowSoftInputMode="adjustResize">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="your_scheme" android:host="your_redirect_uri"/>
             </intent-filter>
+            <meta-data android:name="com.google.android.gms.version"
+                android:value="@integer/google_play_services_version" />
+            <meta-data
+                android:name="com.naver.maps.map.location_tracking_mode"
+                android:value="location_button" />
+
+
+            <meta-data
+                android:name="com.google.firebase.messaging.default_notification_icon"
+                android:resource="@drawable/ic_notification" />
+            <meta-data
+                android:name="com.google.firebase.messaging.default_notification_color"
+                android:resource="@color/colorAccent" />
+
             <meta-data
               android:resource="@style/NormalTheme"
               android:name="com.google.android.gms.ads.APPLICATION_ID"
               android:value="777016848163-ll9ecl4lorvlu46hrafn4d81hfi5bugv"
               />
             <meta-data
-                android:name="com.google.android.geo.API_KEY"
-                android:value="@string/google_maps_api_key"/>
+                android:name="com.naver.maps.map.hpa2d8y0jw"
+                android:value="3XGEYWT5LMtrd7hXgyisWxARruUV9SCeTbq2C8fQ" />
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
