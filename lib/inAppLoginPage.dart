@@ -72,7 +72,7 @@ class _InAppLoginPageState extends State<InAppLoginPage> {
     }
   }
 
-  /*// Google 로그인
+  // Google 로그인
   Future<void> _loginWithGoogle() async {
     final googleAuthService = GoogleAuthService();
     final user = await googleAuthService.signInWithGoogle();
@@ -84,7 +84,7 @@ class _InAppLoginPageState extends State<InAppLoginPage> {
       print("Google 로그인 실패");
     }
   }
-
+/*
   // Naver 로그인
   Future<void> _loginWithNaver() async {
     final naverAuthService = NaverAuthService();
@@ -205,7 +205,7 @@ class _InAppLoginPageState extends State<InAppLoginPage> {
                     style: TextStyle(color: Colors.red),
                   ),
                 ),
-              /*SizedBox(height: 16),
+              SizedBox(height: 16),
 
               // Google 간편 로그인 버튼
               ElevatedButton.icon(
@@ -219,7 +219,7 @@ class _InAppLoginPageState extends State<InAppLoginPage> {
 
               SizedBox(height: 8),
 
-              // Naver 간편 로그인 버튼
+              /*// Naver 간편 로그인 버튼
               ElevatedButton.icon(
                 onPressed: _loginWithNaver,
                 icon: Icon(Icons.web),
