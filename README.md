@@ -1,77 +1,131 @@
-<<<<<<< HEAD
-# Community
-OpenSource_Project_Team_OpenForge
-=======
-# zipcode_community
+Community  
+ Firebase 기반 Flutter 앱   
+사용자 관리, 게시판, 채팅, 네이버 지도 기능을 포함한 다기능 모바일 애플리케이션.
 
-A new Flutter project.
+---
 
-## Getting Started
+   목차 
+1. [개요]
+2. [주요 기능]
+   - 사용자 관리  
+   - 게시판  
+   - 채팅  
+   - 네이버 지도  
+3. [설치 및 실행 방법]
+4. [기능 상세 설명]
+5. [기술 스택]
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+   개요 
+이 프로젝트는 Firebase를 백엔드로 사용하는 Flutter 애플리케이션으로, 사용자 인증, 게시판, 채팅, 네이버 지도 연동 등의 기능을 제공합니다. 실시간 데이터 반영 및 사용자 편의성을 극대화한 다양한 기능을 제공합니다.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
->>>>>>> 77a60fc76a822754187e0c25628659e93668b8b6
+   주요 기능 
 
+   1. 사용자 관리 
+- 이메일/비밀번호 로그인 및 회원가입.
+- Google 로그인 지원.
+- 닉네임 변경 및 비밀번호 변경 기능.
 
-home: const MapScreen(), // WebView로 지도 출력
-home: NaverMapScreen(), // 로그인 화면으로 이동
-home: RegisterPage(),// 회원가입 화면
+   2. 게시판 
+- 카테고리별 게시글 조회 및 작성.
+- 게시글 조회 수 증가, 수정, 삭제.
+- 작성 시간 사용자 친화적 표시.
 
-autherservice_.dart = firebase를 사용하여 사용자 등록 처리
-    firestore에 user의 id,email, nickname, profile_image을 저장
-    profile_image는 이미지 uri만 등록, 실제 이미지는 fire storage에 등록한다.
-    
-    
-authservice_google.dart = 구글 로그인
-GetPosition.dart = 위치 서비스 확인
-home_screen.dart = 홈 화면 
+   3. 채팅 
+- 닉네임 검색 및 채팅방 생성.
+- 기존 채팅방 목록 표시.
+- 실시간 메시지 표시 및 전송.
 
+   4. 네이버 지도 
+- 실시간 위치 추적.
+- 마커 추가, 삭제, 세부 정보 표시.
+- 사용자 권한 요청 및 상태 확인.
 
-Login.dart
-    실제로 로그인하는 UI
-    1. InApp로그인
-    2. 회원가입 버튼
-        회원가입 페이지로 이동
-    3. Google 간편 로그인 버튼
-    4. Naver 간편 로그인 버튼
-change_password.dart
-    "비밀번호 변경: 로그인된 사용자의 updatePassword(String newPassword) 메서드를 사용한다."
+---
 
+   기능 상세 설명 
 
-구글과 네이버의 간편로그인
+   1. 사용자 관리 
 
-authGoogle.dart
-    Google로 간편 로그인/로그아웃 하고 정보를 firestore에 저장
-    1. Google로 간편 로그인
-        signInWithGoogle()
-    2. 로그아웃
-        GoogleSignIn.signOut() 구글 로그아웃
-        FirebaseAuth.signOut() firebase 로그아웃
-signInWithGoogle
-    Google로 로그인 할 때 UI (참고)
-    1. Google로 로그인하면 사용자 ID와 닉네임을 따로 받아 저장한다.
-googleAddPage
-    Google로 로그인하면 사용자 ID와 닉네임을 따로 받아 저장하는 추가정보입력화면.
-signInWithNaver
-    naver로 로그인하는 UI (참고)
-    1. naver로 로그인하면 사용자 ID와 닉네임을 따로 받아 저장한다.
-naverAddPage
-    Google로 로그인하면 사용자 ID와 닉네임을 따로 받아 저장하는 추가정보입력화면.
+1.  이메일/비밀번호 로그인 
+   - 입력한 이메일과 비밀번호로 Firebase Authentication을 통해 로그인.
+   - 성공 시 `/home` 화면으로 이동, 실패 시 오류 메시지 출력.
 
+2.  회원가입 
+   - Firebase Authentication을 이용하여 신규 계정을 생성.
+   - 비밀번호는 6자리 이상 입력해야 합니다.
 
-이메일은 fireabase에서 등록하러면 필요하다.
-프로필 이미지 등록은 firebase storage에서 등록하고
-firestore에서는 storage uri만 등록한다.
+3.  Google 로그인 
+   - Google 계정을 이용한 간편 로그인 기능.
 
+4.  닉네임 변경 
+   - 닉네임 변경 팝업 제공.  
+   - 새 닉네임을 Firebase Firestore에 저장.
 
+5.  비밀번호 변경 
+   - 로그인된 사용자의 비밀번호를 Firebase Authentication을 통해 변경.
 
+---
 
-비밀번호 재설정: sendPasswordResetEmail 메서드를 사용하여 이메일을 통해 비밀번호를 재설정.
+   2. 게시판 
+
+1.  카테고리별 게시글 조회 
+   - 선택한 카테고리에 따라 게시글 데이터를 실시간으로 표시.
+   - 게시글은 `createdAt` 기준 내림차순으로 정렬.
+
+2.  게시글 작성/수정/삭제 
+   - 사용자는 게시글을 작성, 수정 및 삭제 가능.
+   - 삭제는 작성자 본인만 가능.
+
+3.  게시글 조회 수 증가 
+   - 게시글 클릭 시 조회수가 자동으로 1 증가.
+
+4.  작성 시간 표시 
+   - `X일 전`, `X시간 전` 등 사용자 친화적 방식으로 표시.
+
+---
+
+   3. 채팅 
+
+1.  닉네임 검색 
+   - 입력된 닉네임으로 Firestore에서 사용자를 검색하여 표시.
+
+2.  기존 채팅방 표시 
+   - 사용자가 참가 중인 채팅방 목록을 실시간으로 확인 가능.
+
+3.  새로운 채팅방 생성 
+   - 두 사용자 간 새로운 채팅방 생성 또는 기존 채팅방 열기.
+
+4.  메시지 전송 및 표시 
+   - Firestore에 메시지를 저장하여 실시간으로 반영.
+   - 송신자/수신자 구분하여 UI 구성.
+
+---
+
+   4. 네이버 지도 
+
+1.  위치 정보 처리 
+   - 현재 위치 가져오기 및 실시간 위치 추적.
+   - 위치 서비스 및 권한 상태 확인.
+
+2.  마커 관리 
+   - 지도 클릭 시 임시 마커 추가 가능.
+   - 다이얼로그를 통해 제목, 세부 정보, 공개 여부 입력 후 마커 저장.
+   - 마커 삭제 및 세부 정보 표시.
+
+3.  지도 카메라 이동 
+   - 현재 위치를 기반으로 지도의 카메라 위치 자동 업데이트.
+
+---
+
+   기술 스택 
+
+-  프로그래밍 언어 : Dart  
+-  프레임워크 : Flutter  
+-  백엔드 : Firebase (Authentication, Firestore, Storage)  
+-  지도 : Naver Maps API  
+
+---
